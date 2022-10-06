@@ -1,0 +1,223 @@
+{
+    "name": "House_Price_Prediction_Project",
+    "properties": {
+        "activities": [
+            {
+                "name": "Mount_data_storage",
+                "type": "DatabricksNotebook",
+                "dependsOn": [],
+                "policy": {
+                    "timeout": "0.12:00:00",
+                    "retry": 2,
+                    "retryIntervalInSeconds": 30,
+                    "secureOutput": false,
+                    "secureInput": false
+                },
+                "userProperties": [],
+                "typeProperties": {
+                    "notebookPath": "/Users/regunanthan.k@tigeranalytics.com/Mount1",
+                    "baseParameters": {
+                        "container": {
+                            "value": "@pipeline().parameters.container",
+                            "type": "Expression"
+                        },
+                        "mount": {
+                            "value": "@pipeline().parameters.mount",
+                            "type": "Expression"
+                        },
+                        "storage_account": {
+                            "value": "@pipeline().parameters.storage_account",
+                            "type": "Expression"
+                        },
+                        "access_key": {
+                            "value": "@pipeline().parameters.access_key",
+                            "type": "Expression"
+                        }
+                    }
+                },
+                "linkedServiceName": {
+                    "referenceName": "AzureDatabricksLinkedService",
+                    "type": "LinkedServiceReference"
+                }
+            },
+            {
+                "name": "Train_test_split",
+                "type": "DatabricksNotebook",
+                "dependsOn": [
+                    {
+                        "activity": "Mount_data_storage",
+                        "dependencyConditions": [
+                            "Succeeded"
+                        ]
+                    }
+                ],
+                "policy": {
+                    "timeout": "0.12:00:00",
+                    "retry": 0,
+                    "retryIntervalInSeconds": 30,
+                    "secureOutput": false,
+                    "secureInput": false
+                },
+                "userProperties": [],
+                "typeProperties": {
+                    "notebookPath": "/Users/regunanthan.k@tigeranalytics.com/train_test_split2",
+                    "baseParameters": {
+                        "container": {
+                            "value": "@pipeline().parameters.container",
+                            "type": "Expression"
+                        }
+                    }
+                },
+                "linkedServiceName": {
+                    "referenceName": "AzureDatabricksLinkedService",
+                    "type": "LinkedServiceReference"
+                }
+            },
+            {
+                "name": "Preprocess and Train",
+                "type": "DatabricksNotebook",
+                "dependsOn": [
+                    {
+                        "activity": "Train_test_split",
+                        "dependencyConditions": [
+                            "Succeeded"
+                        ]
+                    }
+                ],
+                "policy": {
+                    "timeout": "0.12:00:00",
+                    "retry": 0,
+                    "retryIntervalInSeconds": 30,
+                    "secureOutput": false,
+                    "secureInput": false
+                },
+                "userProperties": [],
+                "typeProperties": {
+                    "notebookPath": "/Users/regunanthan.k@tigeranalytics.com/preprocess_and_train3",
+                    "baseParameters": {
+                        "container": {
+                            "value": "@pipeline().parameters.container",
+                            "type": "Expression"
+                        },
+                        "train_path": {
+                            "value": "@activity('Train_test_split').output.runOutput.train_set_path",
+                            "type": "Expression"
+                        }
+                    }
+                },
+                "linkedServiceName": {
+                    "referenceName": "AzureDatabricksLinkedService",
+                    "type": "LinkedServiceReference"
+                }
+            },
+            {
+                "name": "Inference",
+                "type": "DatabricksNotebook",
+                "dependsOn": [
+                    {
+                        "activity": "Preprocess and Train",
+                        "dependencyConditions": [
+                            "Succeeded"
+                        ]
+                    }
+                ],
+                "policy": {
+                    "timeout": "0.12:00:00",
+                    "retry": 0,
+                    "retryIntervalInSeconds": 30,
+                    "secureOutput": false,
+                    "secureInput": false
+                },
+                "userProperties": [],
+                "typeProperties": {
+                    "notebookPath": "/Users/regunanthan.k@tigeranalytics.com/test_model4",
+                    "baseParameters": {
+                        "test_set_path": {
+                            "value": "@activity('Train_test_split').output.runOutput.test_set_path",
+                            "type": "Expression"
+                        },
+                        "pipeline_path": {
+                            "value": "@activity('Preprocess and Train').output.runOutput.pipleine_path",
+                            "type": "Expression"
+                        },
+                        "model_path": {
+                            "value": "@activity('Preprocess and Train').output.runOutput.model_path",
+                            "type": "Expression"
+                        },
+                        "container": {
+                            "value": "@pipeline().parameters.container",
+                            "type": "Expression"
+                        }
+                    }
+                },
+                "linkedServiceName": {
+                    "referenceName": "AzureDatabricksLinkedService",
+                    "type": "LinkedServiceReference"
+                }
+            },
+            {
+                "name": "Unmount",
+                "type": "DatabricksNotebook",
+                "dependsOn": [
+                    {
+                        "activity": "Inference",
+                        "dependencyConditions": [
+                            "Succeeded"
+                        ]
+                    }
+                ],
+                "policy": {
+                    "timeout": "0.12:00:00",
+                    "retry": 0,
+                    "retryIntervalInSeconds": 30,
+                    "secureOutput": false,
+                    "secureInput": false
+                },
+                "userProperties": [],
+                "typeProperties": {
+                    "notebookPath": "/Users/regunanthan.k@tigeranalytics.com/Mount1",
+                    "baseParameters": {
+                        "container": {
+                            "value": "@pipeline().parameters.container",
+                            "type": "Expression"
+                        },
+                        "mount": "FALSE",
+                        "storage_account": {
+                            "value": "@pipeline().parameters.storage_account",
+                            "type": "Expression"
+                        },
+                        "access_key": {
+                            "value": "@pipeline().parameters.access_key",
+                            "type": "Expression"
+                        }
+                    }
+                },
+                "linkedServiceName": {
+                    "referenceName": "AzureDatabricksLinkedService",
+                    "type": "LinkedServiceReference"
+                }
+            }
+        ],
+        "parameters": {
+            "container": {
+                "type": "string",
+                "defaultValue": "adfproject"
+            },
+            "mount": {
+                "type": "string",
+                "defaultValue": "TRUE"
+            },
+            "storage_account": {
+                "type": "string",
+                "defaultValue": "reguadf"
+            },
+            "access_key": {
+                "type": "string",
+                "defaultValue": "U36ixJo8U4F84ec7WXOh/2p7gfiCJ3dCdIfXs/p7/6BOPnwOWIkphQTAaFPrvw1N+oyWvs7vRw7C+ASthstvwA=="
+            }
+        },
+        "annotations": [],
+        "lastPublishTime": "2022-10-03T11:08:43Z"
+    },
+    "type": "Microsoft.DataFactory/factories/pipelines"
+}
